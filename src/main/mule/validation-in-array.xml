@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    <http:listener-config name="HTTP_LISTENER_SEND_PLANT" doc:name="HTTP Listener config" doc:id="148dfbbd-73b9-4cf5-bc93-34bcd6f040b7" basePath="/" >
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <flow name="validation-in-arrayFlow" doc:id="d7fa852c-b7dd-4fab-a6d2-8e4aa5d931c3" >
+        <http:listener doc:name="Listener das plantas" doc:id="91c712c4-2678-4d0b-8845-e1841f8287b5" config-ref="HTTP_LISTENER_SEND_PLANT" path="/">
+        </http:listener>
+        <set-variable value="#[payload]" doc:name="Plantas na requisição" doc:id="35ede174-1567-4303-a6f7-5467c5a73b3a" variableName="coderfc"/>
+        <set-variable doc:name="Plantas possiveis no prod properties" doc:id="a13fa4d8-c3c9-4689-94bf-65ca5be3a9c6" variableName="plantas" value='#[["ua01","ua03", "ua02", "ua04"]]'/>
+        <logger level="INFO" doc:name="Plantas presentes na requisição" doc:id="0a9ae70a-6fc9-4771-963e-4d912a7fc174" message='O codigo da RFC é a planta: #[vars.coderfc]'/>
+        <foreach doc:name="For Each" doc:id="ea44ed8e-4d58-4e9f-99c3-24241b24d8cf" collection="#[vars.coderfc]">
+            <try doc:name="Try" doc:id="f4d38b58-69e0-4a9f-aff3-addc4b98faf5" >
+                <logger level="INFO" doc:name="Plantas em split para análise" doc:id="54358cc2-95b9-463b-88bd-ba695115ac72" message="Planta em analise: #[payload]" />
+                <validation:is-true doc:name="Se contains no prod properties" doc:id="a671132e-77b7-437a-a0d2-9d09a24f94eb" expression="#[vars.plantas contains(payload)]" message="A planta #[payload] não esta no prod"/>
+                <error-handler >
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="acf20698-f68a-4472-be90-3a73a83d0eb3" type="ANY">
+                        <logger level="INFO" doc:name="Planta não presente" doc:id="bc9a0dfc-3dab-493c-961d-5aaaf9042d6e" message="Planta #[payload] não existe no prod properties"/>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </foreach>
+    </flow>
+</mule>
